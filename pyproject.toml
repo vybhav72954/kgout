@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kgout"
+version = "1.0.0"
+description = "Auto-sync Kaggle notebook outputs to Google Drive or local machine via ngrok"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+authors = [
+    {name = "Vybhav Chaturvedi"},
+]
+keywords = [
+    "kaggle", "notebook", "sync", "auto-download", "machine-learning",
+    "google-drive", "ngrok", "experiment-tracking",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Operating System :: OS Independent",
+]
+
+# No hard dependencies - core uses only stdlib
+dependencies = []
+
+[project.optional-dependencies]
+gdrive = [
+    "google-api-python-client>=2.0",
+    "google-auth>=2.0",
+]
+local = [
+    "pyngrok>=6.0",
+]
+all = [
+    "google-api-python-client>=2.0",
+    "google-auth>=2.0",
+    "pyngrok>=6.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+]
+
+[project.urls]
+Homepage = "https://github.com/vybhavchaturvedi/kgout"
+Repository = "https://github.com/vybhavchaturvedi/kgout"
+Issues = "https://github.com/vybhavchaturvedi/kgout/issues"
+
+[tool.setuptools.packages.find]
+include = ["kgout*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
