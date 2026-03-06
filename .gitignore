@@ -12,3 +12,5 @@ venv/
 .tox/
 *.whl
 .env
+test_local.py
+test_ngork.py

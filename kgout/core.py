@@ -166,9 +166,24 @@ class KgOut:
 
         # Safety: block watching root or sensitive system directories
         resolved = os.path.realpath(self._watch_dir)
-        _DANGEROUS_ROOTS = ("/", "/etc", "/var", "/usr", "/bin", "/sbin",
-                            "/root", "/home", "/proc", "/sys", "/dev")
-        if resolved in _DANGEROUS_ROOTS:
+        resolved_norm = resolved.replace("\\", "/").rstrip("/").lower()
+        _is_windows = os.name == "nt"
+
+        # Block filesystem roots (Linux "/" or Windows "C:", "D:", etc.)
+        _is_root = (
+            resolved_norm == ""
+            or resolved_norm in ("/", "\\")
+            or (len(resolved_norm) == 2 and resolved_norm[1] == ":")
+        )
+
+        # Block known sensitive directories (Linux only — these don't exist on Windows)
+        _DANGEROUS_LINUX = (
+            "/etc", "/var", "/usr", "/bin", "/sbin",
+            "/root", "/home", "/proc", "/sys", "/dev",
+        )
+        _is_dangerous = _is_root or (not _is_windows and resolved_norm in _DANGEROUS_LINUX)
+
+        if _is_dangerous:
             raise ValueError(
                 f"Refusing to watch '{resolved}' — this would expose "
                 f"sensitive system files. Use a project-specific directory."

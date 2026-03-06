@@ -121,8 +121,11 @@ class FileWatcher:
                 elif self._registry[path] != fingerprint:
                     self._events_fired += 1
                     pending.append((path, "modified"))
-            self._registry = current
-
+            # Merge, don't replace: keep registry entries for files that are
+            # temporarily absent from 'current' due to settle_time filtering.
+            # Only remove files that have truly disappeared from disk.
+            self._registry.update(current)
+    
         for path, event in pending:
             try:
                 self._callback(path, event)

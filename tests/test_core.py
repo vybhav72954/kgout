@@ -3,6 +3,7 @@
 import os
 import tempfile
 import time
+import sys
 
 from kgout.core import KgOut
 
@@ -58,7 +59,11 @@ def test_repr():
 
 def test_rejects_dangerous_watch_dirs():
     """KgOut should refuse to watch dangerous system directories."""
-    dangerous = ["/", "/etc", "/var", "/usr", "/root", "/home"]
+    if sys.platform == "win32":
+        dangerous = [os.path.splitdrive(os.getcwd())[0] + "\\"]
+    else:
+        dangerous = ["/", "/etc", "/var", "/usr", "/root", "/home"]
+    
     for d in dangerous:
         try:
             kg = KgOut("local", watch_dir=d)
