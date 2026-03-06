@@ -88,6 +88,8 @@ class _FileHandler(http.server.SimpleHTTPRequestHandler):
             lines.append('<tr><td><a href="..">⬆ ..</a></td><td></td></tr>')
 
         for entry in entries:
+            if entry.startswith("."):
+                continue
             fullpath = os.path.join(path, entry)
             linkname = entry
             if os.path.isdir(fullpath):

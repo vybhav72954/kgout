@@ -155,17 +155,6 @@ os.environ["NGROK_AUTH_TOKEN"] = UserSecretsClient().get_secret("NGROK_AUTH_TOKE
 
 ## Security
 
-kgout takes the following security measures:
-
-- **Localhost-only binding**: The HTTP file server binds to `127.0.0.1`, not `0.0.0.0`. Only the ngrok tunnel can reach it — not other devices on the same network.
-- **Path traversal protection**: Requests that attempt to escape the served directory (e.g., `/../../../etc/passwd`) are blocked.
-- **Security headers**: All HTTP responses include `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and a Content Security Policy.
-- **No symlink following**: The watcher uses `followlinks=False` to prevent symlink-based escapes.
-- **Dangerous directory guard**: Attempting to watch `/`, `/etc`, `/home`, or other sensitive paths raises a `ValueError`.
-- **Credential masking**: ngrok tokens are redacted from error messages.
-- **Partial file guard**: Files are only synced after they haven't been modified for 2 seconds, preventing sync of half-written files.
-- **Minimal GDrive scope**: Uses `drive.file` scope — the service account can only access files it created, not your entire Drive.
-
 See [SECURITY.md](SECURITY.md) for the full security policy and vulnerability reporting.
 
 ## How It Works
@@ -181,10 +170,14 @@ The watcher runs as a **daemon thread** — it won't block your notebook or prev
 
 ## Known Limitations
 
-- **Polling-based**: Uses periodic scanning, not filesystem events — there's a configurable delay (`interval`)
-- **ngrok free tier**: Limited to 1 tunnel; sessions may disconnect after ~2 hours
-- **GDrive flat upload**: Subdirectories are flattened to filenames (e.g., `subdir_file.csv`) in v1.0
-- **Public URL**: Anyone with the ngrok URL can download files. Don't share it with untrusted parties.
+- **Polling-based, not instant**: kgout scans the directory every N seconds (default 30). Files won't appear until the next scan completes. Not suitable for real-time streaming.
+- **ngrok free tier**: Limited to 1 tunnel at a time. Sessions may disconnect after ~2 hours. URL changes every time kgout starts.
+- **Restricted networks**: ngrok requires outbound internet access on ports 443/4443. Institutional networks (university campuses, corporate firewalls, research lab servers) may block ngrok traffic. If the tunnel fails to start, your network likely blocks it — use the `gdrive` destination instead.
+- **Public URL**: Anyone with the ngrok URL can browse and download your files. Don't share it with untrusted parties. The URL is random and temporary, but not password-protected.
+- **GDrive flat upload**: Subdirectories are flattened into filenames (e.g., `subdir/file.csv` becomes `subdir_file.csv`) in v1.x.
+- **Partial file risk**: If a very large file is still being written when a scan occurs, it may sync an incomplete version. kgout waits 2 seconds after last modification (settle time), but for multi-GB files, write to a temp name and rename when complete.
+- **No resumable downloads**: If the ngrok tunnel disconnects mid-download, you need to re-download. There's no resume support.
+- **Kaggle internet required**: The Kaggle notebook must have internet access enabled (Settings → Internet → On) for both `local` and `gdrive` destinations.
 
 ## Development
 

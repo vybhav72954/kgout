@@ -124,6 +124,10 @@ class FileWatcher:
             # Merge, don't replace: keep registry entries for files that are
             # temporarily absent from 'current' due to settle_time filtering.
             # Only remove files that have truly disappeared from disk.
+            deleted = set(self._registry.keys()) - set(current.keys())
+            for path in deleted:
+                if not os.path.exists(path):
+                    del self._registry[path]
             self._registry.update(current)
     
         for path, event in pending:

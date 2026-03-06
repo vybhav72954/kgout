@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kgout"
-version = "1.0.0"
+version = "1.0.1"
 description = "Auto-sync Kaggle notebook outputs to Google Drive or local machine via ngrok"
 readme = "README.md"
 license = {text = "MIT"}
