@@ -28,23 +28,22 @@ pip install kgout[all]
 ### Local Download via ngrok (Recommended)
 
 Exposes your `/kaggle/working/` directory as a public URL — open it in any browser on your phone, laptop, anywhere. Every new file appears instantly.
-
 ```python
 import os
 os.environ["NGROK_AUTH_TOKEN"] = "your_token_here"  # free at ngrok.com
 
 from kgout import KgOut
 
-with KgOut("local") as kg:
-    # ┌────────────────────────────────────────────────┐
-    # │  kgout — files available at:                   │
-    # │  https://abc123.ngrok-free.app                 │
-    # └────────────────────────────────────────────────┘
+kg = KgOut("local").start()
+# ┌────────────────────────────────────────────────┐
+# │  kgout — files available at:                   │
+# │  https://abc123.ngrok-free.app                 │
+# └────────────────────────────────────────────────┘
 
-    # ... your training code ...
-    # Every new file saved to /kaggle/working/ is instantly
-    # browsable and downloadable from the URL above.
-    pass
+# ... your training code ...
+# Every new file saved to /kaggle/working/ is instantly
+# browsable and downloadable from the URL above.
+# Tunnel stays alive until the kernel session ends.
 ```
 
 **How it works:** kgout starts a file server on localhost, creates an ngrok tunnel to it, and gives you the public URL. The file server serves your watch directory live — any file your notebook saves appears immediately in the browser. A background watcher thread logs every new file and its direct download link.
@@ -76,18 +75,22 @@ with KgOut(
     pass
 ```
 
-### Manual start/stop (no context manager)
-
+### Context manager vs manual start
 ```python
-kg = KgOut("local")
-kg.start()
-
-# ... long training ...
-
+# ✅ RECOMMENDED for Kaggle — tunnel stays alive after training ends
+kg = KgOut("local").start()
+train_model()
+# ← tunnel still running, download your files anytime
 print(kg.stats)  # {'files_tracked': 12, 'events_fired': 5}
+# kg.stop()  # only call when you're truly done
 
-kg.stop()
+# ⚠️  Context manager — tunnel STOPS when the block ends
+with KgOut("local") as kg:
+    train_model()
+# ← tunnel is dead here, can't download files!
 ```
+
+**For Kaggle notebooks, always use `kg.start()` instead of `with KgOut(...)`.** The context manager kills the tunnel the moment your code finishes, which means you can't download files after training completes. With manual start, the tunnel stays alive for the entire kernel session (up to 12 hours).
 
 ## Configuration
 
@@ -113,7 +116,6 @@ Instead of passing tokens directly, you can set these environment variables:
 | `NGROK_AUTH_TOKEN` | `local` destination | ngrok authentication token |
 | `KGOUT_GDRIVE_CREDENTIALS` | `gdrive` destination | Path to service account JSON |
 
-See `.env.example` in the repo for a template.
 
 ## Default Ignore Patterns
 
