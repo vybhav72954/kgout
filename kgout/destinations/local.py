@@ -88,6 +88,7 @@ class _FileHandler(http.server.SimpleHTTPRequestHandler):
             lines.append('<tr><td><a href="..">⬆ ..</a></td><td></td></tr>')
 
         for entry in entries:
+            # Skip hidden files/dirs in the listing
             if entry.startswith("."):
                 continue
             fullpath = os.path.join(path, entry)
@@ -126,6 +127,10 @@ class LocalDestination(BaseDestination):
     Files are browseable and downloadable from the public ngrok URL.
     The watcher callback just logs new files — no upload needed since
     the file server already serves the directory live.
+
+    **Warning:** ngrok free-tier tunnels disconnect after ~2 hours.
+    For long training runs, use the ``gdrive`` destination instead
+    (or combine both with ``dest=["gdrive", "local"]``).
     """
 
     def __init__(
@@ -141,10 +146,22 @@ class LocalDestination(BaseDestination):
         self._http_thread: Optional[threading.Thread] = None
         self._tunnel = None
         self._public_url: Optional[str] = None
+        self._tunnel_warned = False  # only warn once about dead tunnel
 
     @property
     def name(self) -> str:
         return "local"
+
+    def _is_tunnel_alive(self) -> bool:
+        """Check if the ngrok tunnel is still active."""
+        if not self._tunnel:
+            return False
+        try:
+            from pyngrok import ngrok
+            tunnels = ngrok.get_tunnels()
+            return any(t.public_url == self._public_url for t in tunnels)
+        except Exception:
+            return False
 
     def start(self):
         # 1. Start HTTP file server
@@ -176,6 +193,7 @@ class LocalDestination(BaseDestination):
             print(f"\n{'='*56}")
             print(f"  📁 kgout — files available at:")
             print(f"  🔗 {self._public_url}")
+            print(f"  ⚠️  ngrok free tier: tunnel may disconnect after ~2h")
             print(f"{'='*56}\n")
 
         except ImportError:
@@ -220,7 +238,20 @@ class LocalDestination(BaseDestination):
 
     def sync(self, filepath: str, relpath: str, event: str):
         """No upload needed — the file server serves the directory live.
-        Just log the availability."""
+        Just log the availability. Warns if tunnel has died."""
         if self._public_url:
-            url = f"{self._public_url}/{urllib.parse.quote(relpath)}"
-            logger.info("   ↳ Download: %s", url)
+            # Check tunnel health periodically (only warn once)
+            if not self._tunnel_warned and not self._is_tunnel_alive():
+                self._tunnel_warned = True
+                logger.warning(
+                    "⚠️  ngrok tunnel appears to have disconnected! "
+                    "The URL %s is likely dead. Files are still being "
+                    "tracked but cannot be downloaded via ngrok. "
+                    "Use the gdrive destination for long runs.",
+                    self._public_url,
+                )
+                return
+
+            if not self._tunnel_warned:
+                url = f"{self._public_url}/{urllib.parse.quote(relpath)}"
+                logger.info("   ↳ Download: %s", url)

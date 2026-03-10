@@ -25,7 +25,7 @@ If you discover a security vulnerability, please report it privately:
 1. **Do NOT open a public GitHub issue**
 2. Email: [vybhavchaturvedi@gmail.com] with subject "kgout security"
 3. Include: description, reproduction steps, and impact assessment
-4. You will receive a response within 48 hours
+4. You will receive a response within 48-72 hours
 
 We will coordinate disclosure and credit reporters in the changelog.
 

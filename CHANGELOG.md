@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.0.1] - 2026-03-07
+## [1.1.0] - 2026-03-09
+
+### Changed
+- **Default destination is now `gdrive` instead of `local`**. ngrok free-tier tunnels disconnect after ~2 hours, making `local` unreliable for long training runs. Google Drive uploads are persistent and survive session disconnects.
+
+### Added
+- `KGOUT_GDRIVE_FOLDER_ID` environment variable support — both Google Drive parameters can now come from the environment
+- ngrok tunnel health detection — kgout now warns when the ngrok tunnel has disconnected instead of silently printing dead URLs
+- ngrok free-tier warning printed on tunnel startup
 
 ### Fixed
 - Hidden files/folders (e.g. `.virtual_documents/`) no longer show in the ngrok file browser
