@@ -21,7 +21,8 @@ class KgOut:
     Parameters
     ----------
     dest : str or list[str]
-        Destination(s): ``"local"`` (ngrok tunnel) and/or ``"gdrive"``.
+        Destination(s): ``"gdrive"`` (Google Drive) and/or ``"local"`` (ngrok).
+        Default is ``"gdrive"``.
     watch_dir : str
         Directory to watch. Defaults to ``/kaggle/working``.
     interval : int
@@ -36,6 +37,7 @@ class KgOut:
     Google Drive options (when dest includes "gdrive"):
         folder_id : str
             Google Drive folder ID to upload into.
+            Also checks ``KGOUT_GDRIVE_FOLDER_ID`` env var.
         credentials : str
             Path to a service account JSON key file.
             Also checks ``KGOUT_GDRIVE_CREDENTIALS`` env var.
@@ -49,14 +51,12 @@ class KgOut:
     Examples
     --------
     >>> from kgout import KgOut
-    >>> with KgOut("local") as kg:
-    ...     # training code here
-    ...     pass
+    >>> kg = KgOut("gdrive", folder_id="...", credentials="...").start()
     """
 
     def __init__(
         self,
-        dest: Union[str, Sequence[str]] = "local",
+        dest: Union[str, Sequence[str]] = "gdrive",
         watch_dir: str = _DEFAULT_WATCH_DIR,
         interval: int = 30,
         ignore: Optional[List[str]] = None,
@@ -79,7 +79,7 @@ class KgOut:
 
         # Destination-specific config
         self._gdrive_cfg: Dict[str, Any] = {
-            "folder_id": folder_id,
+            "folder_id": folder_id or os.environ.get("KGOUT_GDRIVE_FOLDER_ID"),
             "credentials": credentials or os.environ.get("KGOUT_GDRIVE_CREDENTIALS"),
         }
         self._local_cfg: Dict[str, Any] = {
@@ -105,7 +105,7 @@ class KgOut:
                 self._destinations.append(self._make_local())
             else:
                 raise ValueError(
-                    f"Unknown destination '{name}'. Choose 'local' or 'gdrive'."
+                    f"Unknown destination '{name}'. Choose 'gdrive' or 'local'."
                 )
 
     def _make_gdrive(self):
@@ -125,7 +125,8 @@ class KgOut:
             )
         if not folder_id:
             raise ValueError(
-                "Google Drive requires `folder_id=` — the ID of the target folder."
+                "Google Drive requires `folder_id=` — the ID of the target folder. "
+                "You can also set KGOUT_GDRIVE_FOLDER_ID env var."
             )
         return GDriveDestination(creds_path, folder_id)
 
@@ -199,7 +200,7 @@ class KgOut:
 
         self._init_destinations()
 
-        # Start destinations (e.g. ngrok tunnel)
+        # Start destinations (e.g. ngrok tunnel, gdrive auth)
         for dest in self._destinations:
             dest.start()
 
