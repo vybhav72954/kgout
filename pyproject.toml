@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kgout"
-version = "1.1.0"
+version = "1.2.0"
 description = "Auto-sync Kaggle notebook outputs to Google Drive or local machine via ngrok"
 readme = "README.md"
 license = {text = "MIT"}
@@ -38,6 +38,7 @@ dependencies = []
 gdrive = [
     "google-api-python-client>=2.0",
     "google-auth>=2.0",
+    "google-auth-oauthlib>=0.5",
 ]
 local = [
     "pyngrok>=6.0",
@@ -45,12 +46,16 @@ local = [
 all = [
     "google-api-python-client>=2.0",
     "google-auth>=2.0",
+    "google-auth-oauthlib>=0.5",
     "pyngrok>=6.0",
 ]
 dev = [
     "pytest>=7.0",
     "pytest-cov",
 ]
+
+[project.scripts]
+kgout-auth = "kgout.auth:main"
 
 [project.urls]
 Homepage = "https://github.com/vybhav72954/kgout"
