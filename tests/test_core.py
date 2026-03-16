@@ -47,14 +47,21 @@ def test_repr():
     """Repr should work without starting."""
     with tempfile.TemporaryDirectory() as tmpdir:
         kg = KgOut.__new__(KgOut)
-        kg._dest_names = ["local"]
+        kg._dest_names = ["gdrive"]
         kg._watch_dir = tmpdir
         kg._interval = 30
         kg._running = False
 
         r = repr(kg)
-        assert "local" in r
+        assert "gdrive" in r
         assert "stopped" in r
+
+
+def test_default_dest_is_gdrive():
+    """Default destination should be gdrive."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        kg = KgOut(watch_dir=tmpdir)
+        assert kg._dest_names == ["gdrive"]
 
 
 def test_rejects_dangerous_watch_dirs():
@@ -63,7 +70,7 @@ def test_rejects_dangerous_watch_dirs():
         dangerous = [os.path.splitdrive(os.getcwd())[0] + "\\"]
     else:
         dangerous = ["/", "/etc", "/var", "/usr", "/root", "/home"]
-    
+
     for d in dangerous:
         try:
             kg = KgOut("local", watch_dir=d)

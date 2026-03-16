@@ -13,9 +13,14 @@ Drop it into any notebook as a single cell.
 ## Install
 
 ```bash
-pip install kgout[gdrive]   # Google Drive (recommended)
-pip install kgout[local]    # ngrok tunnel (quick experiments < 2h)
-pip install kgout[all]      # both
+# Google Drive support (recommended for long runs)
+pip install kgout[gdrive]
+
+# Local/ngrok tunnel support (for quick experiments < 2 hours)
+pip install kgout[local]
+
+# Everything
+pip install kgout[all]
 ```
 
 ## Quick Start
@@ -87,14 +92,60 @@ kg = KgOut(
 # ✅ RECOMMENDED — stays alive after training ends
 kg = KgOut(...).start()
 train_model()
-# ← still running, syncing continues
+# ← still running, download/upload continues
+# kg.stop()  # only call when you're truly done
 
+# ⚠️  Context manager — STOPS when the block ends
+with KgOut(...) as kg:
 # ⚠️  Context manager — STOPS when the block ends
 with KgOut(...) as kg:
     train_model()
 # ← dead here, no more syncing
 ```
 
+**For Kaggle notebooks, always use `.start()` instead of `with KgOut(...)`.** The context manager kills everything the moment your code finishes. With `.start()`, syncing continues for the entire kernel session (up to 12 hours).
+
+## Setting Up Google Drive
+
+One-time setup (takes 5 minutes):
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project (or use existing) and enable the **Google Drive API**
+3. Go to **IAM & Admin > Service Accounts** > Create a service account
+4. Create a key (JSON type) > download it
+5. Upload the JSON to Kaggle as a **private dataset** (e.g., `my-creds`)
+6. In Google Drive, create a folder for outputs > right-click > **Share** > paste the service account email (the `client_email` field in the JSON) > give it **Editor** access
+7. Copy the folder ID from the Drive URL:
+   ```
+   https://drive.google.com/drive/folders/1aBcDeFgHiJkLmNoPqRsTuVwXyZ
+                                           └──── this is folder_id ────┘
+   ```
+8. In your notebook:
+   ```python
+   kg = KgOut(
+       folder_id="1aBcDeFgHiJkLmNoPqRsTuVwXyZ",
+       credentials="/kaggle/input/my-creds/service_account.json",
+   ).start()
+   ```
+
+That's it. Every file saved to `/kaggle/working/` from this point forward auto-uploads to your Drive folder.
+
+## Setting Up ngrok (for local destination)
+
+1. Create a free account at [ngrok.com](https://ngrok.com)
+2. Copy your auth token from [the dashboard](https://dashboard.ngrok.com/get-started/your-authtoken)
+3. In your Kaggle notebook:
+   ```python
+   import os
+   os.environ["NGROK_AUTH_TOKEN"] = "your_token"
+   ```
+   Or pass it directly: `KgOut("local", ngrok_token="your_token")`
+
+**Tip:** On Kaggle, store the token as a [Kaggle Secret](https://www.kaggle.com/discussions/product-feedback/114053):
+```python
+from kaggle_secrets import UserSecretsClient
+os.environ["NGROK_AUTH_TOKEN"] = UserSecretsClient().get_secret("NGROK_AUTH_TOKEN")
+```
 **For Kaggle, always use `.start()`**. The context manager kills everything when your code finishes.
 
 ## Setting Up Google Drive
@@ -180,6 +231,7 @@ os.environ["NGROK_AUTH_TOKEN"] = UserSecretsClient().get_secret("NGROK_AUTH_TOKE
 | Parameter | Default | Description |
 |---|---|---|
 | `dest` | `"gdrive"` | `"gdrive"`, `"local"`, or `["gdrive", "local"]` |
+| `dest` | `"gdrive"` | `"gdrive"`, `"local"`, or `["gdrive", "local"]` |
 | `watch_dir` | `/kaggle/working` | Directory to watch (recursive) |
 | `interval` | `30` | Seconds between scans (min: 5) |
 | `ignore` | see below | Glob patterns for files to skip |
@@ -230,6 +282,7 @@ See [SECURITY.md](SECURITY.md) for the full security policy.
 ## Development
 
 ```bash
+git clone https://github.com/vybhav72954/kgout
 git clone https://github.com/vybhav72954/kgout
 cd kgout
 pip install -e ".[dev,all]"
