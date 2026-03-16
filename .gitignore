@@ -18,3 +18,7 @@ idea
 .idea
 uv.lock
 .kgout
+client_secret.json
+kgout_token.json
+local_test
+ 

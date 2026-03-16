@@ -77,3 +77,20 @@ def test_rejects_dangerous_watch_dirs():
             raise
         except Exception:
             pass  # other errors are fine (e.g. permission denied)
+
+def test_default_dest_is_gdrive():
+    """Default destination should be gdrive."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        kg = KgOut(watch_dir=tmpdir)
+        assert kg._dest_names == ["gdrive"]
+
+
+def test_folder_id_from_env():
+    """KGOUT_GDRIVE_FOLDER_ID env var should be picked up."""
+    os.environ["KGOUT_GDRIVE_FOLDER_ID"] = "test_env_folder_123"
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            kg = KgOut(watch_dir=tmpdir)
+            assert kg._gdrive_cfg["folder_id"] == "test_env_folder_123"
+    finally:
+        del os.environ["KGOUT_GDRIVE_FOLDER_ID"]
