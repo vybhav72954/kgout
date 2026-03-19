@@ -133,27 +133,23 @@ class GDriveDestination(BaseDestination):
         except OSError:
             pass
 
-        from googleapiclient.http import MediaFileUpload
-
         mime = self._guess_mimetype(filepath)
-        media = MediaFileUpload(filepath, mimetype=mime, resumable=True)
 
+        # On modification, delete the old file first then upload fresh.
+        # Google's resumable upload sessions expire quickly, so reusing
+        # a stored file ID for update() causes 400 Bad Request errors.
         if relpath in self._uploaded and event == "modified":
-            # Update existing file
-            file_id = self._uploaded[relpath]
+            old_id = self._uploaded.pop(relpath)
             try:
-                self._service.files().update(
-                    fileId=file_id,
-                    media_body=media,
+                self._service.files().delete(
+                    fileId=old_id,
                     supportsAllDrives=True,
                 ).execute()
-                logger.info("   ↳ Updated on GDrive: %s", relpath)
+                logger.info("   ↳ Deleted old version: %s", relpath)
             except Exception as exc:
-                logger.error("   ↳ GDrive update failed for %s: %s", relpath, exc)
-                # Fall through to create
-                self._upload_new(filepath, relpath, mime)
-        else:
-            self._upload_new(filepath, relpath, mime)
+                logger.warning("   ↳ Could not delete old file %s: %s", relpath, exc)
+
+        self._upload_new(filepath, relpath, mime)
 
     def _upload_new(self, filepath, relpath, mime):
         """Create a new file on Drive."""
