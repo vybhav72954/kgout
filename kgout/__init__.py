@@ -15,7 +15,7 @@ One-time Google Drive setup (run on your local machine):
     kgout-auth
 """
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 from kgout.core import KgOut
 
